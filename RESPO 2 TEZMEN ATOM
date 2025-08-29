@@ -1,0 +1,207 @@
+-- LocalScript - StarterPlayerScripts
+-- Nome: TZMENU V2🔥⚡
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
+-- GUI principal
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TZMENU V2🔥⚡"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Botão de abrir menu (arrastável)
+local OpenButton = Instance.new("TextButton")
+OpenButton.Size = UDim2.new(0, 60, 0, 60)
+OpenButton.Position = UDim2.new(0, 20, 0.5, -30)
+OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+OpenButton.Text = "⚡"
+OpenButton.TextSize = 28
+OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenButton.Parent = ScreenGui
+OpenButton.BackgroundTransparency = 0.2
+OpenButton.AutoButtonColor = true
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.ZIndex = 2
+
+-- Deixar arrastável
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+	local delta = input.Position - dragStart
+	OpenButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+OpenButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = OpenButton.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+OpenButton.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
+end)
+
+-- Menu Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 250, 0, 180)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -90)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.ClipsDescendants = true
+MainFrame.ZIndex = 1
+
+-- Tween abrir/fechar menu
+local function toggleMenu()
+	if MainFrame.Visible == false then
+		MainFrame.Visible = true
+		MainFrame.Size = UDim2.new(0,0,0,0)
+		local openTween = TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{Size = UDim2.new(0,250,0,180)})
+		openTween:Play()
+	else
+		local closeTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+			{Size = UDim2.new(0,0,0,0)})
+		closeTween:Play()
+		closeTween.Completed:Connect(function()
+			MainFrame.Visible = false
+		end)
+	end
+end
+OpenButton.MouseButton1Click:Connect(toggleMenu)
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,30)
+Title.BackgroundTransparency = 1
+Title.Text = "🔥 TZMENU V2 ⚡"
+Title.TextColor3 = Color3.fromRGB(255, 200, 50)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.Parent = MainFrame
+
+-- Função criar botões
+local function createButton(name, posY)
+	local Btn = Instance.new("TextButton")
+	Btn.Size = UDim2.new(0.9,0,0,40)
+	Btn.Position = UDim2.new(0.05,0,0,posY)
+	Btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	Btn.TextColor3 = Color3.fromRGB(255,255,255)
+	Btn.TextSize = 18
+	Btn.Font = Enum.Font.Gotham
+	Btn.Text = name
+	Btn.Parent = MainFrame
+	Btn.AutoButtonColor = true
+	Btn.BackgroundTransparency = 0.2
+	return Btn
+end
+
+local AimlockBtn = createButton("🎯 AIMLOCK", 40)
+local ESPBtn = createButton("👁 ESP", 90)
+local InfJumpBtn = createButton("🦘 INF JUMP", 140)
+
+-------------------
+-- AIMLOCK
+-------------------
+local Aimlock = false
+local AimPart = "Head"
+
+local function getClosestPlayer()
+	local closest, dist = nil, math.huge
+	for _,plr in pairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild(AimPart) then
+			local pos, vis = Camera:WorldToViewportPoint(plr.Character[AimPart].Position)
+			if vis then
+				local mag = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(pos.X, pos.Y)).magnitude
+				if mag < dist then
+					dist = mag
+					closest = plr
+				end
+			end
+		end
+	end
+	return closest
+end
+
+RunService.RenderStepped:Connect(function()
+	if Aimlock then
+		local target = getClosestPlayer()
+		if target and target.Character and target.Character:FindFirstChild(AimPart) then
+			Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character[AimPart].Position)
+		end
+	end
+end)
+
+AimlockBtn.MouseButton1Click:Connect(function()
+	Aimlock = not Aimlock
+	AimlockBtn.Text = Aimlock and "🎯 AIMLOCK [ON]" or "🎯 AIMLOCK [OFF]"
+end)
+
+-------------------
+-- ESP
+-------------------
+local ESP = false
+local Highlights = {}
+
+local function toggleESP(state)
+	ESP = state
+	if ESP then
+		for _,plr in pairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character then
+				if not Highlights[plr] then
+					local hl = Instance.new("Highlight")
+					hl.Parent = plr.Character
+					hl.FillColor = Color3.fromRGB(255,0,0)
+					hl.OutlineColor = Color3.fromRGB(255,255,255)
+					hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+					Highlights[plr] = hl
+				end
+			end
+		end
+	else
+		for _,hl in pairs(Highlights) do
+			hl:Destroy()
+		end
+		Highlights = {}
+	end
+end
+
+ESPBtn.MouseButton1Click:Connect(function()
+	ESP = not ESP
+	toggleESP(ESP)
+	ESPBtn.Text = ESP and "👁 ESP [ON]" or "👁 ESP [OFF]"
+end)
+
+-------------------
+-- INFINITE JUMP
+-------------------
+local InfJump = false
+UserInputService.JumpRequest:Connect(function()
+	if InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+		LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+	end
+end)
+
+InfJumpBtn.MouseButton1Click:Connect(function()
+	InfJump = not InfJump
+	InfJumpBtn.Text = InfJump and "🦘 INF JUMP [ON]" or "🦘 INF JUMP [OFF]"
+end)
